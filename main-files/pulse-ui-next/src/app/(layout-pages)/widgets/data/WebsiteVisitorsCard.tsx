@@ -25,7 +25,7 @@ export default function WebsiteVisitorsCard() {
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="text-md font-semibold text-muted-foreground">
-          Website Visitors
+          Total Updates
         </CardTitle>
       </CardHeader>
 

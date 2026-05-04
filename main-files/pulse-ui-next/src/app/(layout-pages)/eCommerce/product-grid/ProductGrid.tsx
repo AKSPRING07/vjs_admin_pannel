@@ -321,9 +321,9 @@ export default function ProductGrid() {
       <Card>
         <CardHeader className="flex flex-row flex-wrap gap-4 items-center justify-between border-b py-4">
           <div>
-            <CardTitle className="text-lg">Products Grid</CardTitle>
+            <CardTitle className="text-lg">Content Grid</CardTitle>
             <CardDescription>
-              Visual product management
+              Visual content management
             </CardDescription>
           </div>
 
@@ -331,7 +331,7 @@ export default function ProductGrid() {
             <div className="relative w-[220px]">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Search products..."
+                placeholder="Search content..."
                 className="pl-9"
                 value={search}
                 onChange={(e) => {
@@ -344,7 +344,7 @@ export default function ProductGrid() {
             <Link href="/ecommerce/add-product">
               <Button size="sm">
                 <Plus className="mr-1 h-5 w-5" />
-                Add Product
+                Add Content
               </Button>
             </Link>
           </div>
@@ -449,22 +449,19 @@ function ProductGridCard({
             {product.name}
           </h4>
           <p className="text-sm text-muted-foreground">
-            {product.category}
+            {product.category} • Hero Section
+          </p>
+          <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
+            This is a short description of the content for the VJS Groups CMS.
           </p>
         </div>
 
         {/* Meta */}
         <div className="flex items-center justify-between">
-          <span className="font-semibold">{product.price}</span>
           <Badge className={statusVariant(product.status)} variant= "outline">
             {product.status}
           </Badge>
-        </div>
-
-        {/* Footer */}
-        <div className="flex justify-between text-xs text-muted-foreground">
-          <span>SKU: {product.sku}</span>
-          <span>{product.stock}</span>
+          <span className="text-xs text-muted-foreground">Updated: 2024-05-04</span>
         </div>
       </CardContent>
     </Card>

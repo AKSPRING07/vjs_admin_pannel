@@ -25,7 +25,7 @@ export default function AreaStatsCard() {
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="text-md font-semibold text-muted-foreground">
-          Total Revenue
+          Total Content
         </CardTitle>
       </CardHeader>
 

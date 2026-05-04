@@ -38,9 +38,9 @@ const data = {
       url: "/dashboard/crm",
       isActive: true,
     },
-    { title: "Product List", url: "/eCommerce/product-list" },
-    { title: "Product Grid", url: "/eCommerce/product-grid" },
-    { title: "Add Product", url: "/eCommerce/add-product" },
+    { title: "Content List", url: "/eCommerce/product-list" },
+    { title: "Content Grid", url: "/eCommerce/product-grid" },
+    { title: "Add Content", url: "/eCommerce/add-product" },
     { title: "Categories", url: "/eCommerce/categories" },
     {
       title: "Content Management",

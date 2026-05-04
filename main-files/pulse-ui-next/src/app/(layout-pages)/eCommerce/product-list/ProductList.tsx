@@ -263,20 +263,20 @@ export default function ProductList() {
         />
       </div>
 
-      {/* PRODUCT LIST */}
+      {/* CONTENT LIST */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between border-b py-4 flex-wrap gap-3">
           <div>
-          <CardTitle className="text-lg mb-0">Products List</CardTitle>
+          <CardTitle className="text-lg mb-0">Content List</CardTitle>
           <CardDescription>
-            Latest product purchases
+            Recently Updated Content
           </CardDescription>
           </div>
           {/* Search */}
           <div className="relative mb-0 max-w-lg w-[280px]">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search orders..."
+              placeholder="Search content..."
               className="pl-9"
               value={search}
               onChange={(e) => {
@@ -345,11 +345,23 @@ export default function ProductList() {
 
               <Select>
                 <SelectTrigger className="w-[160px]">
-                  <SelectValue placeholder="Category" />
+                  <SelectValue placeholder="Page" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="outerwear">Outerwear</SelectItem>
-                  <SelectItem value="accessories">Accessories</SelectItem>
+                  <SelectItem value="home">Home</SelectItem>
+                  <SelectItem value="about">About Us</SelectItem>
+                  <SelectItem value="journey">Our Journey</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder="Section" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="hero">Hero</SelectItem>
+                  <SelectItem value="overview">Overview</SelectItem>
+                  <SelectItem value="mission">Mission</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -357,7 +369,7 @@ export default function ProductList() {
             <Link href="/eCommerce/add-product">
               <Button size="sm">
                 <Plus className="mr-1 h-5 w-5" />
-                Add Product
+                Add Content
               </Button>
             </Link>
           </div>
@@ -376,12 +388,11 @@ export default function ProductList() {
                     onCheckedChange={(val) => toggleAll(!!val)}
                   />
                   </TableHead>
-                  <TableHead>Product</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Stock</TableHead>
-                  <TableHead>SKU</TableHead>
-                  <TableHead>Price</TableHead>
+                  <TableHead>Title</TableHead>
+                  <TableHead>Page</TableHead>
+                  <TableHead>Section</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Last Updated</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -408,15 +419,15 @@ export default function ProductList() {
                     </TableCell>
 
                     <TableCell>{product.category}</TableCell>
-                    <TableCell>{product.stock}</TableCell>
-                    <TableCell>{product.sku}</TableCell>
-                    <TableCell>{product.price}</TableCell>
+                    <TableCell>Hero</TableCell>
 
                     <TableCell>
                       <Badge className={statusVariant(product.status)} variant="outline">
                         {product.status}
                       </Badge>
                     </TableCell>
+
+                    <TableCell>2024-05-04</TableCell>
 
                     <TableCell className="text-right">
                       <DropdownMenu>

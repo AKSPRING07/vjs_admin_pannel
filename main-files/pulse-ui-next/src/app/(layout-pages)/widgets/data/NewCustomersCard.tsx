@@ -25,7 +25,7 @@ export default function NewCustomersCard() {
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="text-md font-semibold text-muted-foreground">
-          New Customers
+          Total Pages
         </CardTitle>
       </CardHeader>
 

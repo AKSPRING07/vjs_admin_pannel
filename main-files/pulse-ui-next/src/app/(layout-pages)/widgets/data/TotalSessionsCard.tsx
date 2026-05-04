@@ -25,7 +25,7 @@ export default function TotalSessionsCard() {
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="text-md font-semibold text-muted-foreground">
-          Total Sessions
+          Total Services
         </CardTitle>
       </CardHeader>
 
