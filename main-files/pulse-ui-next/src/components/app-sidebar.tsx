@@ -28,8 +28,8 @@ import {
 // nav menues
 const data = {
   user: {
-    name: "shadcn",
-    email: "m@example.com",
+    name: "Admin",
+    email: "admin@vjsgroups.com",
     avatar: "/avatars/shadcn.jpg",
   },
   navMain: [
@@ -81,8 +81,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenuButton size="lg" asChild>
               <a href="#">
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">Pulse UI</span>
-                  <span className="truncate text-xs">Next.js Admin</span>
+                  <span className="truncate font-medium text-lg">VJS Admin</span>
                 </div>
               </a>
             </SidebarMenuButton>
