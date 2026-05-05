@@ -2,23 +2,28 @@
 
 import { CRUDPage } from "@/components/admin/crud-page"
 
-const newsData = [
-  { id: 1, title: "New Product Launch", author: "Admin", date: "2024-03-01", summary: "We are excited to announce..." },
-  { id: 2, title: "Quarterly Results", author: "Finance", date: "2024-03-05", summary: "Our performance this quarter..." },
-]
-
 const columns = [
   { accessorKey: "title", header: "Title" },
   { accessorKey: "author", header: "Author" },
-  { accessorKey: "date", header: "Date" },
-  { accessorKey: "summary", header: "Summary" },
+  { accessorKey: "status", header: "Status" },
+  { accessorKey: "created_at", header: "Date" },
 ]
 
 const formFields = [
   { id: "title", label: "Title" },
   { id: "author", label: "Author" },
-  { id: "date", label: "Date", type: "date" },
-  { id: "summary", label: "Summary" },
+  { id: "summary", label: "Summary", type: "textarea" },
+  { id: "content", label: "Content", type: "textarea" },
+  { id: "image_url", label: "Image", type: "image" },
+  { 
+    id: "status", 
+    label: "Status", 
+    type: "select", 
+    options: [
+      { label: "Draft", value: "Draft" },
+      { label: "Published", value: "Published" }
+    ] 
+  },
 ]
 
 export default function NewsPage() {
@@ -26,9 +31,10 @@ export default function NewsPage() {
     <CRUDPage
       title="News Management"
       entityName="News"
-      initialData={newsData}
+      endpoint="/news"
       columns={columns}
       formFields={formFields}
     />
   )
 }
+

@@ -8,6 +8,7 @@ import FAQ from "../components/sections/FAQ"
 import Pricing from "../components/sections/Pricing"
 import Footer from "../components/layout/Footer"
 import Demos from "../components/sections/Demos"
+import DynamicCMS from "../components/sections/DynamicCMS"
 import BackToTop from "../components/layout/BackToTop"
 
 export default function Home() {
@@ -16,6 +17,7 @@ export default function Home() {
       <Navbar />
       <Hero />
       <Demos />
+      <DynamicCMS />
       <Features />
       <Ecommerce />
       <TechStack />

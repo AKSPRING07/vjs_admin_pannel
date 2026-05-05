@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react"
 import path from "path"
 
 export default defineConfig({
-  base: "/pulse-ui/landing-page/", // 👈 VERY IMPORTANT
+  base: "/", // 👈 Updated for local access
   plugins: [react()],
   resolve: {
     alias: {

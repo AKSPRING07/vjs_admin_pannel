@@ -2,21 +2,26 @@
 
 import { CRUDPage } from "@/components/admin/crud-page"
 
-const servicesData = [
-  { id: 1, name: "Web Development", description: "Building responsive websites", status: "Active" },
-  { id: 2, name: "SEO Optimization", description: "Improving search rankings", status: "Active" },
-]
-
 const columns = [
-  { accessorKey: "name", header: "Service Name" },
-  { accessorKey: "description", header: "Description" },
+  { accessorKey: "title", header: "Service Name" },
   { accessorKey: "status", header: "Status" },
+  { accessorKey: "icon", header: "Icon Class" },
 ]
 
 const formFields = [
-  { id: "name", label: "Service Name" },
-  { id: "description", label: "Description" },
-  { id: "status", label: "Status" },
+  { id: "title", label: "Service Name" },
+  { id: "description", label: "Description", type: "textarea" },
+  { id: "icon", label: "Icon Class (e.g., flaticon-development)" },
+  { id: "image_url", label: "Image", type: "image" },
+  { 
+    id: "status", 
+    label: "Status", 
+    type: "select", 
+    options: [
+      { label: "Draft", value: "Draft" },
+      { label: "Published", value: "Published" }
+    ] 
+  },
 ]
 
 export default function ServicesPage() {
@@ -24,9 +29,10 @@ export default function ServicesPage() {
     <CRUDPage
       title="Services Management"
       entityName="Service"
-      initialData={servicesData}
+      endpoint="/services"
       columns={columns}
       formFields={formFields}
     />
   )
 }
+

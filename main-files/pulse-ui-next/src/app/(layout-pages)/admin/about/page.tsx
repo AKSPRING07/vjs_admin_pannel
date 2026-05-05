@@ -2,31 +2,29 @@
 
 import { CRUDPage } from "@/components/admin/crud-page"
 
-const aboutData = [
-  { id: 1, section: "Our Mission", content: "To provide quality solutions...", lastUpdated: "2024-01-10" },
-  { id: 2, section: "Our Vision", content: "To lead the industry in innovation...", lastUpdated: "2024-01-12" },
-]
-
 const columns = [
-  { accessorKey: "section", header: "Section Title" },
-  { accessorKey: "content", header: "Content" },
-  { accessorKey: "lastUpdated", header: "Last Updated" },
+  { accessorKey: "title", header: "Page Title" },
+  { accessorKey: "description", header: "Description" },
+  { accessorKey: "updated_at", header: "Last Updated" },
 ]
 
 const formFields = [
-  { id: "section", label: "Section Title" },
-  { id: "content", label: "Content" },
-  { id: "lastUpdated", label: "Last Updated", type: "date" },
+  { id: "title", label: "Page Title" },
+  { id: "description", label: "Description", type: "textarea" },
+  { id: "mission", label: "Mission", type: "textarea" },
+  { id: "vision", label: "Vision", type: "textarea" },
+  { id: "image_url", label: "Hero Image", type: "image" },
 ]
 
 export default function AboutPage() {
   return (
     <CRUDPage
       title="About Us Content"
-      entityName="Content Section"
-      initialData={aboutData}
+      entityName="About Content"
+      endpoint="/about"
       columns={columns}
       formFields={formFields}
     />
   )
 }
+

@@ -1,6 +1,7 @@
-const nextConfig = {
-  // output: "export",
-  trailingSlash: true,
-}
+import type { NextConfig } from "next";
 
-export default nextConfig
+const nextConfig: NextConfig = {
+  trailingSlash: true,
+};
+
+export default nextConfig;

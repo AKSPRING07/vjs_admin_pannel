@@ -39,6 +39,10 @@ const TrafficTable = lazy(() =>
   import("../..//dashboard/analytics/TrafficTable")
 )
 
+const RecentActivityCard = lazy(() =>
+  import("../..//widgets/data/RecentActivityCard")
+)
+
 // Skeleton
 function CardSkeleton({ height = 250 }: { height?: number }) {
   return (
@@ -74,12 +78,21 @@ export default function CrmDashboard() {
 
       </div>
 
-      {/* Large Chart */}
-      <Suspense fallback={<CardSkeleton height={350} />}>
-        <VisitorsSalesStackedCard />
-      </Suspense>
+      {/* Mid Section - Activity & Stats */}
+      <div className="grid grid-cols-12 gap-6">
+        <div className="col-span-12 lg:col-span-8">
+            <Suspense fallback={<CardSkeleton height={350} />}>
+                <VisitorsSalesStackedCard />
+            </Suspense>
+        </div>
+        <div className="col-span-12 lg:col-span-4">
+            <Suspense fallback={<CardSkeleton height={350} />}>
+                <RecentActivityCard />
+            </Suspense>
+        </div>
+      </div>
 
-      {/* Mid Section */}
+      {/* Mid Section 2 */}
       <div className="grid grid-cols-12 gap-6">
 
         <div className="col-span-12 lg:col-span-6 xl:col-span-4">
@@ -101,6 +114,7 @@ export default function CrmDashboard() {
         </div>
 
       </div>
+
 
       {/* Table */}
       <Suspense fallback={<CardSkeleton height={400} />}>

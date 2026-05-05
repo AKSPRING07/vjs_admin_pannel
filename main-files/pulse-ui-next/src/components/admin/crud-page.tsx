@@ -1,10 +1,10 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataTable } from "@/components/data-table"
 import { Button } from "@/components/ui/button"
-import { Plus, Edit, Trash2 } from "lucide-react"
+import { Plus, Edit, Trash2, Loader2 } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -12,31 +12,52 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
+import { api } from "@/lib/api"
 
 interface CRUDPageProps<T> {
   title: string
   entityName: string
-  initialData: T[]
+  endpoint: string // e.g., "/news" or "/services"
   columns: ColumnDef<T>[]
-  formFields: { id: string; label: string; type?: string }[]
+  formFields: { id: string; label: string; type?: string; options?: { label: string; value: string }[] }[]
 }
 
-export function CRUDPage<T extends { id: string | number }>({
+export function CRUDPage<T extends { id?: string | number; _id?: string }>({
   title,
   entityName,
-  initialData,
+  endpoint,
   columns,
   formFields,
 }: CRUDPageProps<T>) {
-  const [data, setData] = useState<T[]>(initialData)
+  const [data, setData] = useState<T[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSubmitLoading, setIsSubmitLoading] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<T | null>(null)
   const [formData, setFormData] = useState<any>({})
+
+  const fetchData = async () => {
+    setIsLoading(true)
+    try {
+      // We use the public endpoint for listing
+      const result = await api.get(endpoint)
+      // If result is not an array (e.g. for /about), wrap it in one
+      setData(Array.isArray(result) ? result : result ? [result] : [])
+    } catch (error: any) {
+      toast.error(`Failed to fetch ${entityName}: ${error.message}`)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+
+  useEffect(() => {
+    fetchData()
+  }, [endpoint])
 
   const handleAdd = () => {
     setEditingItem(null)
@@ -50,22 +71,41 @@ export function CRUDPage<T extends { id: string | number }>({
     setIsOpen(true)
   }
 
-  const handleDelete = (id: string | number) => {
-    setData(data.filter((item) => item.id !== id))
-    toast.success(`${entityName} deleted successfully`)
+  const handleDelete = async (id: string | number) => {
+    if (!confirm("Are you sure you want to delete this item?")) return
+
+    try {
+      await api.delete(`/admin${endpoint}/${id}`)
+      setData(data.filter((item) => (item.id || item._id) !== id))
+      toast.success(`${entityName} deleted successfully`)
+    } catch (error: any) {
+      toast.error(`Failed to delete: ${error.message}`)
+    }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (editingItem) {
-      setData(data.map((item) => (item.id === editingItem.id ? { ...item, ...formData } : item)))
-      toast.success(`${entityName} updated successfully`)
-    } else {
-      const newItem = { ...formData, id: Math.max(0, ...data.map(i => Number(i.id))) + 1 }
-      setData([...data, newItem])
-      toast.success(`${entityName} added successfully`)
+    setIsSubmitLoading(true)
+    try {
+      if (editingItem) {
+        const id = editingItem.id || editingItem._id
+        // Note: Update logic might vary depending on endpoint
+        // For 'about', it's usually a PUT to /admin/about without ID
+        const url = endpoint === "/about" ? "/admin/about" : `/admin${endpoint}/${id}`
+        const result = await api.put(url, formData)
+        setData(data.map((item) => ((item.id || item._id) === id ? result : item)))
+        toast.success(`${entityName} updated successfully`)
+      } else {
+        const result = await api.post(`/admin${endpoint}`, formData)
+        setData([...data, result])
+        toast.success(`${entityName} added successfully`)
+      }
+      setIsOpen(false)
+    } catch (error: any) {
+      toast.error(`Failed to save: ${error.message}`)
+    } finally {
+      setIsSubmitLoading(false)
     }
-    setIsOpen(false)
   }
 
   const actionColumn: ColumnDef<T> = {
@@ -76,7 +116,7 @@ export function CRUDPage<T extends { id: string | number }>({
         <Button variant="ghost" size="icon" onClick={() => handleEdit(row.original)}>
           <Edit className="h-4 w-4" />
         </Button>
-        <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(row.original.id)}>
+        <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete((row.original.id || row.original._id)!)}>
           <Trash2 className="h-4 w-4" />
         </Button>
       </div>
@@ -94,7 +134,13 @@ export function CRUDPage<T extends { id: string | number }>({
         </Button>
       </div>
 
-      <DataTable columns={allColumns} data={data} />
+      {isLoading ? (
+        <div className="flex justify-center p-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : (
+        <DataTable columns={allColumns} data={data} />
+      )}
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent>
@@ -108,17 +154,68 @@ export function CRUDPage<T extends { id: string | number }>({
             {formFields.map((field) => (
               <div key={field.id} className="space-y-2">
                 <Label htmlFor={field.id}>{field.label}</Label>
-                <Input
-                  id={field.id}
-                  type={field.type || "text"}
-                  value={formData[field.id] || ""}
-                  onChange={(e) => setFormData({ ...formData, [field.id]: e.target.value })}
-                  required
-                />
+                {field.type === "image" ? (
+                  <div className="space-y-2">
+                    {formData[field.id] && (
+                      <img src={formData[field.id]} alt="Preview" className="w-24 h-24 object-cover rounded" />
+                    )}
+                    <Input
+                      id={field.id}
+                      type="file"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0]
+                        if (file) {
+                          try {
+                            const result = await api.upload(file)
+                            setFormData({ ...formData, [field.id]: result.url })
+                            toast.success("Image uploaded successfully")
+                          } catch (error: any) {
+                            toast.error("Upload failed")
+                          }
+                        }
+                      }}
+                    />
+                  </div>
+                ) : field.type === "select" ? (
+                  <select
+                    id={field.id}
+                    className="w-full p-2 border rounded-md"
+                    value={formData[field.id] || ""}
+                    onChange={(e) => setFormData({ ...formData, [field.id]: e.target.value })}
+                    required
+                  >
+                    <option value="">Select {field.label}</option>
+                    {field.options?.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                ) : field.type === "textarea" ? (
+                  <textarea
+                    id={field.id}
+                    className="w-full p-2 border rounded-md"
+                    rows={4}
+                    value={formData[field.id] || ""}
+                    onChange={(e) => setFormData({ ...formData, [field.id]: e.target.value })}
+                    required
+                  />
+                ) : (
+                  <Input
+                    id={field.id}
+                    type={field.type || "text"}
+                    value={formData[field.id] || ""}
+                    onChange={(e) => setFormData({ ...formData, [field.id]: e.target.value })}
+                    required
+                  />
+                )}
               </div>
             ))}
             <DialogFooter>
-              <Button type="submit">{editingItem ? "Save Changes" : `Add ${entityName}`}</Button>
+              <Button type="submit" disabled={isSubmitLoading}>
+                {isSubmitLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {editingItem ? "Save Changes" : `Add ${entityName}`}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -126,3 +223,4 @@ export function CRUDPage<T extends { id: string | number }>({
     </div>
   )
 }
+
