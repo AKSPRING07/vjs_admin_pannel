@@ -14,15 +14,15 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import { 
-  Loader2, 
-  Plus, 
-  Trash2, 
-  Save, 
-  Send, 
-  Upload, 
-  X, 
-  Edit2, 
+import {
+  Loader2,
+  Plus,
+  Trash2,
+  Save,
+  Send,
+  Upload,
+  X,
+  Edit2,
   Layers,
   AlertCircle,
   CheckCircle2,
@@ -73,14 +73,14 @@ export default function AddProduct() {
 function AddProductContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  
+
   const [selectedPage, setSelectedPage] = useState(searchParams.get("page") || "")
   const [selectedSubpage, setSelectedSubpage] = useState(searchParams.get("subpage") || "")
   const [sections, setSections] = useState<any[]>([])
   const [selectedSectionName, setSelectedSectionName] = useState(searchParams.get("section") || "")
   const [selectedSection, setSelectedSection] = useState<any>(null)
   const [selectedAction, setSelectedAction] = useState<string>("")
-  
+
   const [formData, setFormData] = useState<any>({})
   const [cardFormData, setCardFormData] = useState<any>({})
   const [editingCardId, setEditingCardId] = useState<string | null>(null)
@@ -104,23 +104,23 @@ function AddProductContent() {
     if (selectedPage && selectedSectionName) {
       const section = sections.find(s => s.name === selectedSectionName)
       if (!section) return
-      
+
       setSelectedSection(section)
       setIsLoading(true)
-      
+
       const url = `/admin/cms/content?page=${selectedPage}&section=${selectedSectionName}${selectedSubpage ? `&subpage=${selectedSubpage}` : ""}`
-      
+
       try {
         const res = await api.get(url)
         if (res) {
           setContentId(res._id || res.id)
           let content = res.content || (['cards', 'news'].includes(section.type) ? [] : {})
-          
+
           // Robustness: Handle legacy object structures {'items': [...]}
           if (['cards', 'news'].includes(section.type) && !Array.isArray(content) && content && typeof content === 'object' && content.items) {
             content = content.items
           }
-          
+
           setFormData(content)
           setPublished(res.status === "published")
         } else {
@@ -153,20 +153,16 @@ function AddProductContent() {
     setIsSaving(true)
     try {
       const payload = {
-        page: selectedPage,
-        subpage: selectedSubpage,
-        section: selectedSectionName,
-        type: selectedSection.type,
-        content: formData,
-        status
+        mainPage: selectedPage === 'business' ? 'Business Verticals' : selectedPage,
+        subSection: selectedSubpage,
+        category: selectedSectionName,
+        title: formData.title || "Section Content",
+        description: formData.description || formData.subtitle || formData.content || "",
+        image: formData.image_url || formData.image || ""
       }
-      const res = await api.put("/admin/cms/content", payload)
-      if (status === "published") {
-        await api.put(`/admin/cms/content/${res._id || res.id}/publish`, {})
-        toast.success("Published Successfully")
-      } else {
-        toast.success("Draft Saved Successfully")
-      }
+
+      await api.post("/api/content", payload)
+      toast.success("Content Saved Successfully")
       fetchCurrentContent()
     } catch (error: any) {
       toast.error("Action failed")
@@ -179,17 +175,20 @@ function AddProductContent() {
     setIsSaving(true)
     try {
       const payload: any = {
-        page: selectedPage,
-        subpage: selectedSubpage,
-        section: selectedSectionName,
-        type: selectedSection.type,
-        action,
-        card_id: cardId,
-        data: data,
-        status: published ? "published" : "draft"
+        mainPage: selectedPage === 'business' ? 'Business Verticals' : selectedPage,
+        subSection: selectedSubpage,
+        category: selectedSectionName,
+        title: data.title,
+        description: data.description,
+        image: data.image_url || data.image,
+        order: data.order || 0
       }
-      
-      await api.put("/admin/cms/content", payload)
+
+      if (cardId) {
+        await api.put(`/api/content/${cardId}`, payload)
+      } else {
+        await api.post("/api/content", payload)
+      }
       toast.success("Database Updated Successfully")
       setEditingCardId(null)
       setCardFormData({})
@@ -208,15 +207,15 @@ function AddProductContent() {
       <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-6 rounded-2xl border shadow-sm sticky top-0 z-[100] backdrop-blur-md bg-white/80">
         <div>
           <h2 className="text-3xl font-black tracking-tight text-slate-900 flex items-center gap-3">
-             <Database className="text-indigo-600 h-8 w-8" />
-             Content Controller
+            <Database className="text-indigo-600 h-8 w-8" />
+            Content Controller
           </h2>
           <p className="text-slate-500 font-medium">Manage hierarchical business content and card sections.</p>
         </div>
 
         <div className="flex gap-3">
           <Button variant="outline" className="border-slate-200" onClick={handleSaveAll.bind(null, "draft")} disabled={isSaving || !selectedSection}>
-             Save Draft
+            Save Draft
           </Button>
           <Button className="bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-200" onClick={handleSaveAll.bind(null, "published")} disabled={isSaving || !selectedSection}>
             {isSaving ? <Loader2 className="mr-2 animate-spin h-4 w-4" /> : <Send className="mr-2 h-4 w-4" />}
@@ -325,13 +324,13 @@ function AddProductContent() {
           </Card>
 
           {selectedSection && (
-             <div className={`p-4 rounded-2xl border flex items-center justify-between ${published ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : 'bg-amber-50 border-amber-100 text-amber-700'}`}>
-                <div className="flex items-center gap-2 font-bold text-sm">
-                   {published ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
-                   {published ? 'Live on Site' : 'Draft Mode'}
-                </div>
-                <div className="h-2 w-2 rounded-full animate-pulse bg-current"></div>
-             </div>
+            <div className={`p-4 rounded-2xl border flex items-center justify-between ${published ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : 'bg-amber-50 border-amber-100 text-amber-700'}`}>
+              <div className="flex items-center gap-2 font-bold text-sm">
+                {published ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+                {published ? 'Live on Site' : 'Draft Mode'}
+              </div>
+              <div className="h-2 w-2 rounded-full animate-pulse bg-current"></div>
+            </div>
           )}
         </div>
 
@@ -345,7 +344,7 @@ function AddProductContent() {
           ) : !selectedSection ? (
             <div className="flex flex-col items-center justify-center p-32 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
               <div className="h-20 w-20 bg-white rounded-full flex items-center justify-center shadow-xl mb-8">
-                 <ArrowRight className="h-10 w-10 text-slate-300" />
+                <ArrowRight className="h-10 w-10 text-slate-300" />
               </div>
               <h3 className="text-2xl font-black text-slate-900">Configure Location</h3>
               <p className="text-slate-500 text-center mt-3 max-w-sm font-medium">Select a page, sub-section, and category from the left to unlock management tools.</p>
@@ -378,18 +377,18 @@ function AddProductContent() {
                   {(selectedAction === "update" || selectedAction === "delete") && (
                     <Card className="border-slate-100 shadow-xl rounded-3xl overflow-hidden">
                       <div className="px-8 py-6 border-b bg-slate-50/50 flex items-center justify-between">
-                         <CardTitle className="text-xl font-black text-slate-900">
-                           {selectedAction === 'update' ? 'All Items (Edit Mode)' : 'Danger Zone (Delete Mode)'}
-                         </CardTitle>
-                         <Badge className={selectedAction === 'update' ? 'bg-indigo-50 text-indigo-700 border-indigo-100' : 'bg-rose-50 text-rose-700 border-rose-100'}>
-                           {formData.length || 0} Items Found
-                         </Badge>
+                        <CardTitle className="text-xl font-black text-slate-900">
+                          {selectedAction === 'update' ? 'All Items (Edit Mode)' : 'Danger Zone (Delete Mode)'}
+                        </CardTitle>
+                        <Badge className={selectedAction === 'update' ? 'bg-indigo-50 text-indigo-700 border-indigo-100' : 'bg-rose-50 text-rose-700 border-rose-100'}>
+                          {formData.length || 0} Items Found
+                        </Badge>
                       </div>
                       <CardContent className="p-0">
                         <div className="divide-y divide-slate-100">
                           {(!formData || !Array.isArray(formData) || formData.length === 0) ? (
                             <div className="p-20 text-center">
-                               <p className="text-slate-400 font-bold">No items currently stored in this category.</p>
+                              <p className="text-slate-400 font-bold">No items currently stored in this category.</p>
                             </div>
                           ) : (
                             formData.map((card: any, idx: number) => (
@@ -397,7 +396,7 @@ function AddProductContent() {
                                 <div className="flex items-center gap-6">
                                   {card.image_url && (
                                     <div className="h-16 w-16 rounded-2xl overflow-hidden border-2 border-white shadow-lg">
-                                       <img src={card.image_url} className="h-full w-full object-cover" />
+                                      <img src={card.image_url} className="h-full w-full object-cover" />
                                     </div>
                                   )}
                                   <div>
@@ -407,16 +406,16 @@ function AddProductContent() {
                                 </div>
                                 <div className="flex gap-3">
                                   {selectedAction === "update" ? (
-                                    <Button 
-                                      variant="outline" 
+                                    <Button
+                                      variant="outline"
                                       className="rounded-full border-slate-200 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 px-6"
                                       onClick={() => { setEditingCardId(card._card_id); setCardFormData(card); setSelectedAction("edit_single") }}
                                     >
                                       Edit Details
                                     </Button>
                                   ) : (
-                                    <Button 
-                                      variant="destructive" 
+                                    <Button
+                                      variant="destructive"
                                       className="rounded-full px-6"
                                       onClick={() => handleCardAction("delete_card", card._card_id)}
                                     >
@@ -440,7 +439,7 @@ function AddProductContent() {
                           {selectedAction === 'edit_single' ? 'Refine Item Details' : 'New Item Creation'}
                         </CardTitle>
                         <Button variant="ghost" className="text-white hover:bg-white/10 rounded-full" onClick={() => setSelectedAction("update")}>
-                           <X className="h-5 w-5" />
+                          <X className="h-5 w-5" />
                         </Button>
                       </div>
                       <CardContent className="p-10 space-y-8">
@@ -454,8 +453,8 @@ function AddProductContent() {
                         ))}
                         <div className="flex justify-end gap-4 pt-6">
                           <Button variant="ghost" className="rounded-full px-8" onClick={() => setSelectedAction("update")}>Discard</Button>
-                          <Button 
-                            className="bg-indigo-600 hover:bg-indigo-700 rounded-full px-10 shadow-lg shadow-indigo-100" 
+                          <Button
+                            className="bg-indigo-600 hover:bg-indigo-700 rounded-full px-10 shadow-lg shadow-indigo-100"
                             onClick={() => handleCardAction(editingCardId ? "update_card" : "create_card", editingCardId || undefined, cardFormData)}
                             disabled={isSaving}
                           >
@@ -469,11 +468,11 @@ function AddProductContent() {
 
                   {/* NO ACTION SELECTED FALLBACK */}
                   {!selectedAction && (
-                     <div className="flex flex-col items-center justify-center p-20 bg-indigo-50/30 rounded-3xl border border-indigo-100 border-dashed">
-                        <ArrowRight className="h-12 w-12 text-indigo-200 mb-6" />
-                        <h4 className="text-indigo-900 font-black text-xl">Select an Action</h4>
-                        <p className="text-indigo-600/60 font-medium mt-2">Choose "Update", "Delete", or "Create" from the left sidebar to proceed.</p>
-                     </div>
+                    <div className="flex flex-col items-center justify-center p-20 bg-indigo-50/30 rounded-3xl border border-indigo-100 border-dashed">
+                      <ArrowRight className="h-12 w-12 text-indigo-200 mb-6" />
+                      <h4 className="text-indigo-900 font-black text-xl">Select an Action</h4>
+                      <p className="text-indigo-600/60 font-medium mt-2">Choose "Update", "Delete", or "Create" from the left sidebar to proceed.</p>
+                    </div>
                   )}
                 </div>
               )}
@@ -511,7 +510,7 @@ function ImageUploader({ value, onChange }: { value: string; onChange: (url: str
         <div className="relative group w-full aspect-video rounded-3xl overflow-hidden border-4 border-white shadow-2xl">
           <img src={value} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
           <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-             <Button variant="destructive" className="rounded-full" size="sm" onClick={() => onChange("")}><Trash2 className="mr-2 h-4 w-4" /> Replace Image</Button>
+            <Button variant="destructive" className="rounded-full" size="sm" onClick={() => onChange("")}><Trash2 className="mr-2 h-4 w-4" /> Replace Image</Button>
           </div>
         </div>
       ) : (
