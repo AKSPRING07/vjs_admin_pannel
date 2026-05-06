@@ -161,7 +161,7 @@ function AddProductContent() {
         image: formData.image_url || formData.image || ""
       }
 
-      await api.post("/api/content", payload)
+      await api.post("/admin/cms/content", payload)
       toast.success("Content Saved Successfully")
       fetchCurrentContent()
     } catch (error: any) {
@@ -177,7 +177,7 @@ function AddProductContent() {
       // --- DELETE ---
       if (action === "delete_card") {
         if (!cardId) throw new Error("No card ID provided for delete")
-        await api.delete(`/content/${cardId}`)
+        await api.delete(`/admin/cms/content/${cardId}`)
         toast.success("Card deleted successfully")
         fetchCurrentContent()
         return
@@ -195,10 +195,10 @@ function AddProductContent() {
       }
 
       if (action === "update_card" && cardId) {
-        await api.put(`/content/${cardId}`, payload)
+        await api.put(`/admin/cms/content/${cardId}`, payload)
         toast.success("Card updated successfully")
       } else {
-        await api.post("/content", payload)
+        await api.post("/admin/cms/content", payload)
         toast.success("Card created successfully")
         setSelectedAction("update") // switch to update view so the new card is visible
       }
