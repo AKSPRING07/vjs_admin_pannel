@@ -114,18 +114,27 @@ function AddProductContent() {
         const res = await api.get(url)
         if (res) {
           setContentId(res._id || res.id)
-          let content = res.content || (['cards', 'news'].includes(section.type) ? [] : {})
-
-          // Robustness: Handle legacy object structures {'items': [...]}
-          if (['cards', 'news'].includes(section.type) && !Array.isArray(content) && content && typeof content === 'object' && content.items) {
-            content = content.items
+          // Always treat as array for unified Create/Update/Delete flow
+          let content = res.content || []
+          
+          if (!Array.isArray(content) && content && typeof content === 'object') {
+            if (content.items) {
+              content = content.items
+            } else {
+              content = [content] // Wrap single object in array
+            }
           }
 
           setFormData(content)
           setPublished(res.status === "published")
+          
+          // Auto-select "update" if data exists and no action is chosen
+          if (!selectedAction && content.length > 0) {
+            setSelectedAction("update")
+          }
         } else {
           setContentId(null)
-          setFormData(['cards', 'news'].includes(section.type) ? [] : {})
+          setFormData([])
           setPublished(false)
         }
       } catch (err) {
@@ -264,7 +273,7 @@ function AddProductContent() {
               </div>
 
               {/* SUBPAGE */}
-              {selectedPage && (
+              {selectedPage && ["about", "business", "newsroom"].includes(selectedPage) && (
                 <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
                   <Label className="text-xs font-black uppercase text-slate-400 tracking-widest">Sub-Section</Label>
                   <Select value={selectedSubpage} onValueChange={(v) => { setSelectedSubpage(v); setSelectedSectionName(""); setSelectedAction("") }}>
@@ -301,7 +310,7 @@ function AddProductContent() {
               )}
 
               {/* SECTION / CATEGORY */}
-              {selectedSubpage && (
+              {selectedPage && (["home", "blog"].includes(selectedPage) || selectedSubpage) && (
                 <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
                   <Label className="text-xs font-black uppercase text-slate-400 tracking-widest">Category</Label>
                   <Select value={selectedSectionName} onValueChange={(v) => { setSelectedSectionName(v); setSelectedAction("") }}>
@@ -318,17 +327,17 @@ function AddProductContent() {
               )}
 
               {/* ACTION SELECTION */}
-              {selectedSection && (selectedSection.type === 'cards' || selectedSection.type === 'news') && (
+              {selectedSection && (
                 <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
-                  <Label className="text-xs font-black uppercase text-slate-400 tracking-widest">Action Mode</Label>
+                  <Label className="text-xs font-black uppercase text-slate-400 tracking-widest">Management Mode</Label>
                   <Select value={selectedAction} onValueChange={(v) => { setSelectedAction(v); setEditingCardId(null); setCardFormData({}) }}>
-                    <SelectTrigger className="h-12 border-indigo-200 bg-indigo-50/30 text-indigo-700 font-bold">
+                    <SelectTrigger className="h-12 border-indigo-200 bg-indigo-50/30 text-indigo-700 font-bold shadow-sm">
                       <SelectValue placeholder="What do you want to do?" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="update">Update Existing Items</SelectItem>
-                      <SelectItem value="delete">Delete Items</SelectItem>
-                      <SelectItem value="create">Create New Item</SelectItem>
+                      <SelectItem value="update">View & Update Items</SelectItem>
+                      <SelectItem value="create">Add New Entry</SelectItem>
+                      <SelectItem value="delete">Remove Content</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -364,75 +373,54 @@ function AddProductContent() {
             </div>
           ) : (
             <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
-              {/* SINGLE FORMS (Hero, Text) */}
-              {(selectedSection.type === "hero" || selectedSection.type === "text") && (
-                <Card className="border-slate-100 shadow-xl rounded-3xl overflow-hidden">
-                  <div className="px-8 py-6 border-b bg-slate-50/50">
-                    <CardTitle className="text-xl font-black text-slate-900">{selectedSection.label} Editor</CardTitle>
-                  </div>
-                  <CardContent className="p-10 space-y-10">
-                    {FIELD_CONFIG[selectedSection.type].map((field: any) => (
-                      <div key={field.id} className="space-y-4">
-                        <Label className="text-xs font-black uppercase text-slate-400 tracking-widest">{field.label}</Label>
-                        {field.type === "text" && <Input className="h-14 border-slate-200 focus:ring-indigo-500" value={formData[field.id] || ""} onChange={(e) => handleFieldChange(field.id, e.target.value)} />}
-                        {field.type === "textarea" && <Textarea rows={8} className="text-lg border-slate-200 focus:ring-indigo-500" value={formData[field.id] || ""} onChange={(e) => handleFieldChange(field.id, e.target.value)} />}
-                        {field.type === "image" && <ImageUploader value={formData[field.id]} onChange={(url) => handleFieldChange(field.id, url)} />}
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* CARD MANAGEMENT MODES */}
-              {(selectedSection.type === "cards" || selectedSection.type === "news") && (
                 <div className="space-y-8">
                   {/* UPDATE / DELETE LIST */}
                   {(selectedAction === "update" || selectedAction === "delete") && (
                     <Card className="border-slate-100 shadow-xl rounded-3xl overflow-hidden">
                       <div className="px-8 py-6 border-b bg-slate-50/50 flex items-center justify-between">
                         <CardTitle className="text-xl font-black text-slate-900">
-                          {selectedAction === 'update' ? 'All Items (Edit Mode)' : 'Danger Zone (Delete Mode)'}
+                          {selectedAction === 'update' ? 'Stored Records' : 'Removal Zone'}
                         </CardTitle>
                         <Badge className={selectedAction === 'update' ? 'bg-indigo-50 text-indigo-700 border-indigo-100' : 'bg-rose-50 text-rose-700 border-rose-100'}>
-                          {formData.length || 0} Items Found
+                          {Array.isArray(formData) ? formData.length : 0} Items
                         </Badge>
                       </div>
                       <CardContent className="p-0">
                         <div className="divide-y divide-slate-100">
                           {(!formData || !Array.isArray(formData) || formData.length === 0) ? (
                             <div className="p-20 text-center">
-                              <p className="text-slate-400 font-bold">No items currently stored in this category.</p>
+                              <p className="text-slate-400 font-bold">No entries found for this section.</p>
                             </div>
                           ) : (
-                            formData.map((card: any, idx: number) => (
-                              <div key={card._id || card.id || idx} className="p-8 flex items-center justify-between group hover:bg-slate-50 transition-all">
+                            formData.map((item: any, idx: number) => (
+                              <div key={item._id || item.id || idx} className="p-8 flex items-center justify-between group hover:bg-slate-50 transition-all">
                                 <div className="flex items-center gap-6">
-                                  {card.image_url && (
+                                  {(item.image_url || item.image) && (
                                     <div className="h-16 w-16 rounded-2xl overflow-hidden border-2 border-white shadow-lg">
-                                      <img src={card.image_url} className="h-full w-full object-cover" />
+                                      <img src={item.image_url || item.image} className="h-full w-full object-cover" />
                                     </div>
                                   )}
                                   <div>
-                                    <h4 className="font-black text-slate-900 text-lg leading-tight">{card.title || 'Untitled Item'}</h4>
-                                    <p className="text-slate-500 text-sm mt-1 max-w-lg line-clamp-1">{card.description || 'No description provided.'}</p>
+                                    <h4 className="font-black text-slate-900 text-lg leading-tight">{item.title || item.heading || 'Untitled Entry'}</h4>
+                                    <p className="text-slate-500 text-sm mt-1 max-w-lg line-clamp-1">{item.description || item.subtitle || item.content || 'No preview text.'}</p>
                                   </div>
                                 </div>
                                 <div className="flex gap-3">
                                   {selectedAction === "update" ? (
                                     <Button
                                       variant="outline"
-                                      className="rounded-full border-slate-200 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 px-6"
-                                      onClick={() => { setEditingCardId(card._id || card.id); setCardFormData(card); setSelectedAction("edit_single") }}
+                                      className="rounded-full border-slate-200 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 px-6 font-bold"
+                                      onClick={() => { setEditingCardId(item._id || item.id); setCardFormData(item); setSelectedAction("edit_single") }}
                                     >
-                                      Edit Details
+                                      Edit
                                     </Button>
                                   ) : (
                                     <Button
                                       variant="destructive"
-                                      className="rounded-full px-6"
-                                      onClick={() => handleCardAction("delete_card", card._id || card.id)}
+                                      className="rounded-full px-6 font-bold"
+                                      onClick={() => handleCardAction("delete_card", item._id || item.id)}
                                     >
-                                      Confirm Delete
+                                      Delete
                                     </Button>
                                   )}
                                 </div>
@@ -449,7 +437,7 @@ function AddProductContent() {
                     <Card className="border-slate-100 shadow-2xl rounded-3xl overflow-hidden animate-in zoom-in-95">
                       <div className="px-8 py-6 border-b bg-indigo-600 flex items-center justify-between text-white">
                         <CardTitle className="text-xl font-black">
-                          {selectedAction === 'edit_single' ? 'Refine Item Details' : 'New Item Creation'}
+                          {selectedAction === 'edit_single' ? 'Modify Entry' : 'New Entry Creation'}
                         </CardTitle>
                         <Button variant="ghost" className="text-white hover:bg-white/10 rounded-full" onClick={() => setSelectedAction("update")}>
                           <X className="h-5 w-5" />
@@ -467,12 +455,12 @@ function AddProductContent() {
                         <div className="flex justify-end gap-4 pt-6">
                           <Button variant="ghost" className="rounded-full px-8" onClick={() => setSelectedAction("update")}>Discard</Button>
                           <Button
-                            className="bg-indigo-600 hover:bg-indigo-700 rounded-full px-10 shadow-lg shadow-indigo-100"
+                            className="bg-indigo-600 hover:bg-indigo-700 rounded-full px-10 shadow-lg shadow-indigo-100 font-bold"
                             onClick={() => handleCardAction(editingCardId ? "update_card" : "create_card", editingCardId || undefined, cardFormData)}
                             disabled={isSaving}
                           >
                             {isSaving && <Loader2 className="mr-2 animate-spin h-4 w-4" />}
-                            {editingCardId ? 'Save Database Updates' : 'Add to Collection'}
+                            {editingCardId ? 'Save Changes' : 'Create Entry'}
                           </Button>
                         </div>
                       </CardContent>
@@ -483,18 +471,17 @@ function AddProductContent() {
                   {!selectedAction && (
                     <div className="flex flex-col items-center justify-center p-20 bg-indigo-50/30 rounded-3xl border border-indigo-100 border-dashed">
                       <ArrowRight className="h-12 w-12 text-indigo-200 mb-6" />
-                      <h4 className="text-indigo-900 font-black text-xl">Select an Action</h4>
-                      <p className="text-indigo-600/60 font-medium mt-2">Choose "Update", "Delete", or "Create" from the left sidebar to proceed.</p>
+                      <h4 className="text-indigo-900 font-black text-xl">Ready to Manage</h4>
+                      <p className="text-indigo-600/60 font-medium mt-2 text-center">Choose an action from the "Management Mode" menu on the left to start editing this section.</p>
                     </div>
                   )}
                 </div>
-              )}
-            </div>
-          )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
-  )
+    )
 }
 
 function ImageUploader({ value, onChange }: { value: string; onChange: (url: string) => void }) {
