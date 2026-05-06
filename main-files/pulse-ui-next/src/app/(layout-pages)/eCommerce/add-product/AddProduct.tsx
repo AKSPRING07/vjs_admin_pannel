@@ -405,7 +405,7 @@ function AddProductContent() {
                             </div>
                           ) : (
                             formData.map((card: any, idx: number) => (
-                              <div key={card._card_id || idx} className="p-8 flex items-center justify-between group hover:bg-slate-50 transition-all">
+                              <div key={card._id || card.id || idx} className="p-8 flex items-center justify-between group hover:bg-slate-50 transition-all">
                                 <div className="flex items-center gap-6">
                                   {card.image_url && (
                                     <div className="h-16 w-16 rounded-2xl overflow-hidden border-2 border-white shadow-lg">
@@ -422,7 +422,7 @@ function AddProductContent() {
                                     <Button
                                       variant="outline"
                                       className="rounded-full border-slate-200 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 px-6"
-                                      onClick={() => { setEditingCardId(card._card_id); setCardFormData(card); setSelectedAction("edit_single") }}
+                                      onClick={() => { setEditingCardId(card._id || card.id); setCardFormData(card); setSelectedAction("edit_single") }}
                                     >
                                       Edit Details
                                     </Button>
@@ -430,7 +430,7 @@ function AddProductContent() {
                                     <Button
                                       variant="destructive"
                                       className="rounded-full px-6"
-                                      onClick={() => handleCardAction("delete_card", card._card_id)}
+                                      onClick={() => handleCardAction("delete_card", card._id || card.id)}
                                     >
                                       Confirm Delete
                                     </Button>
