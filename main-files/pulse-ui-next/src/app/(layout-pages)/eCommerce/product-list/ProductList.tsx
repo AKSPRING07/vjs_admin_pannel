@@ -38,228 +38,120 @@ import {
 import {
   MoreVertical,
   Plus,
-  ShoppingBag,
-  Wallet,
-  Users,
-  Box,
-  ArrowUpRight,
-  ArrowDownRight,
-  LogOutIcon,
-  SettingsIcon,
-  UserIcon,
+  FileText,
+  RotateCcw,
+  Edit,
+  History,
+  Trash2,
   Search,
+  Loader2,
+  Layout,
+  Layers,
+  CheckCircle2,
+  AlertCircle
 } from "lucide-react"
-
-const products = [
-  {
-    id: 1,
-    name: "Denim Jacket",
-    category: "Outerwear",
-    stock: "In Stock",
-    sku: "DJ-659",
-    price: "$120",
-    status: "Published",
-    image: "/pulse-ui-next/products/01.png",
-  },
-  {
-    id: 2,
-    name: "Leather Belt",
-    category: "Accessories",
-    stock: "In Stock",
-    sku: "LB-500",
-    price: "$45",
-    status: "Published",
-    image: "/pulse-ui-next/products/02.png",
-  },
-  {
-    id: 3,
-    name: "Slim Fit Jeans",
-    category: "Bottoms",
-    stock: "Low Stock",
-    sku: "SFJ-2021",
-    price: "$89",
-    status: "Draft",
-    image: "/pulse-ui-next/products/03.png",
-  },
-  {
-    id: 4,
-    name: "Formal Blazer",
-    category: "Suits & Blazers",
-    stock: "In Stock",
-    sku: "FB-300",
-    price: "$199",
-    status: "Published",
-    image: "/pulse-ui-next/products/04.png",
-  },
-  {
-    id: 5,
-    name: "Running Shoes",
-    category: "Footwear",
-    stock: "Out of Stock",
-    sku: "RS-150",
-    price: "$75",
-    status: "Inactive",
-    image: "/pulse-ui-next/products/05.png",
-  },
-  {
-    id: 6,
-    name: "Cotton Hoodie",
-    category: "Sweatshirts",
-    stock: "In Stock",
-    sku: "CH-100",
-    price: "$149",
-    status: "Draft",
-    image: "/pulse-ui-next/products/06.png",
-  },
-  {
-    id: 7,
-    name: "Wool Scarf",
-    category: "Accessories",
-    stock: "Low Stock",
-    sku: "WS-220",
-    price: "$39",
-    status: "Published",
-    image: "/pulse-ui-next/products/07.png",
-  },
-  {
-    id: 8,
-    name: "Graphic T-Shirt",
-    category: "Tops",
-    stock: "In Stock",
-    sku: "GT-310",
-    price: "$29",
-    status: "Published",
-    image: "/pulse-ui-next/products/08.png",
-  },
-  {
-    id: 9,
-    name: "Raincoat",
-    category: "Outerwear",
-    stock: "Out of Stock",
-    sku: "RC-450",
-    price: "$89",
-    status: "Archived",
-    image: "/pulse-ui-next/products/09.png",
-  },
-];
-
+import { api } from "@/lib/api"
+import { toast } from "sonner"
+import { useRouter } from "next/navigation"
 
 const statusVariant = (status: string) => {
   switch (status) {
-    case "Published":
+    case "published":
       return "bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-400 border-green-500/30"
-    case "Draft":
+    case "draft":
       return "bg-yellow-100 text-yellow-600 dark:bg-yellow-500/20 dark:text-yellow-400 border-yellow-500/30"
-    case "Inactive":
-      return "bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400 border-red-500/30"
     default:
       return "bg-muted text-muted-foreground"
   }
 }
 
 export default function ProductList() {
-   const [search, setSearch] = useState("")
-   const [page, setPage] = useState(1)
-   const [selected, setSelected] = useState<number[]>([])
-   const [ordersData, setOrdersData] = useState<typeof products>(products)
+  const router = useRouter()
+  const [search, setSearch] = useState("")
+  const [page, setPage] = useState(1)
+  const [selected, setSelected] = useState<string[]>([])
+  const [contentList, setContentList] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  const fetchContent = async () => {
+    setIsLoading(true)
+    try {
+      const res = await api.get("/admin/cms/content")
+      setContentList(res || [])
+    } catch (err) {
+      toast.error("Failed to load content list")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchContent()
+  }, [])
+
+  const handleUndo = async (id: string) => {
+    try {
+      await api.post(`/admin/cms/content/${id}/undo`, {})
+      toast.success("Changes reverted to previous version")
+      fetchContent()
+    } catch (err: any) {
+      toast.error(err.message || "Undo failed")
+    }
+  }
 
   // ☑️ Checkbox logic
   const toggleAll = (checked: boolean) => {
-    setSelected(checked ? paginatedProducts.map(p => p.id) : [])
+    setSelected(checked ? paginatedContent.map(p => p._id) : [])
   }
   
-  // Toggle single selection
-  const toggleOne = (id: number) => {
+  const toggleOne = (id: string) => {
     setSelected(prev =>
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     )
   }
 
-  // 📤 Export to CSV
-  const exportToCSV = (rows: typeof products) => {
-    const headers = ["Name", "Category", "Stock", "SKU", "Price", "Status"]
-
-    const csvContent = [
-      headers.join(","),
-      ...rows.map(row =>
-        [
-          row.name,
-          row.category,
-          row.stock,
-          row.sku,
-          row.price,
-          row.status,
-        ].join(",")
-      ),
-    ].join("\n")
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
-    const url = URL.createObjectURL(blob)
-
-    const link = document.createElement("a")
-    link.href = url
-    link.download = "products.csv"
-    link.click()
-
-    URL.revokeObjectURL(url)
-  }
-
-    // 🔍 Search filter
-  const filteredOrders = useMemo(() => {
-    return ordersData.filter((order) =>
-      `${order.name} ${order.category} ${order.status}`
+  // 🔍 Search filter
+  const filteredContent = useMemo(() => {
+    return contentList.filter((item) =>
+      `${item.page} ${item.subpage || ""} ${item.section} ${item.status}`
         .toLowerCase()
         .includes(search.toLowerCase())
     )
-  }, [search, ordersData])
+  }, [search, contentList])
 
-  //
-  const PAGE_SIZE = 5
-  const totalPages = Math.max(1, Math.ceil(filteredOrders.length / PAGE_SIZE))
+  const PAGE_SIZE = 10
+  const totalPages = Math.max(1, Math.ceil(filteredContent.length / PAGE_SIZE))
 
   useEffect(() => {
     setPage((p) => Math.min(p, totalPages))
   }, [totalPages])
 
-  const paginatedProducts = filteredOrders.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  const paginatedContent = filteredContent.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
-  // ☑️ All selected logic
-  const allSelected =
-    paginatedProducts.length > 0 &&
-    selected.length === paginatedProducts.length
-
-    
   return (
     <div className="space-y-6">
 
-      {/* KPI CARDS */}
+      {/* KPI CARDS (Static for now based on actual data) */}
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
         <StatCard
-          title="Total Orders"
-          value="8,542"
-          trend="+3.5%"
-          icon={<ShoppingBag />}
-          positive
+          title="Total Sections"
+          value={contentList.length.toString()}
+          icon={<Layers className="text-primary" />}
         />
         <StatCard
-          title="Total Revenue"
-          value="$23,456"
-          trend="+8.5%"
-          icon={<Wallet />}
-          positive
+          title="Published"
+          value={contentList.filter(c => c.status === "published").length.toString()}
+          icon={<CheckCircle2 className="text-green-500" />}
         />
         <StatCard
-          title="Customers"
-          value="5,678"
-          trend="-2.5%"
-          icon={<Users />}
+          title="Drafts"
+          value={contentList.filter(c => c.status === "draft").length.toString()}
+          icon={<AlertCircle className="text-yellow-500" />}
         />
         <StatCard
-          title="Products"
-          value="1,234"
-          trend="+5.0%"
-          icon={<Box />}
-          positive
+          title="Pages Managed"
+          value={new Set(contentList.map(c => c.page)).size.toString()}
+          icon={<Layout className="text-blue-500" />}
         />
       </div>
 
@@ -267,16 +159,16 @@ export default function ProductList() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between border-b py-4 flex-wrap gap-3">
           <div>
-          <CardTitle className="text-lg mb-0">Content List</CardTitle>
+          <CardTitle className="text-lg mb-0 text-primary">Website Content Explorer</CardTitle>
           <CardDescription>
-            Recently Updated Content
+            Manage and track changes across all website sections
           </CardDescription>
           </div>
           {/* Search */}
           <div className="relative mb-0 max-w-lg w-[280px]">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search content..."
+              placeholder="Search sections..."
               className="pl-9"
               value={search}
               onChange={(e) => {
@@ -288,264 +180,213 @@ export default function ProductList() {
         </CardHeader>
 
         <CardContent className="space-y-4 p-6">
-          {/* Selection Bar */}
-          {selected.length > 0 && (
-            <div className="mb-4 flex items-center justify-between rounded-lg border bg-muted/40 px-4 py-2">
-              <p className="text-sm text-muted-foreground">
-                {selected.length} selected
-              </p>
-
-              <div className="flex gap-2">
-                {/* Export */}
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    const selectedRows = ordersData.filter(p =>
-                      selected.includes(p.id)
-                    )
-                    exportToCSV(selectedRows)
-                  }}
-                >
-                  Export
-                </Button>
-
-                {/* Delete */}
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  onClick={() => {
-                    setOrdersData(prev =>
-                      prev.filter(product => !selected.includes(product.id))
-                    )
-                    setSelected([])
-                  }}
-                >
-                  Delete
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* FILTERS */}
-          <div className="flex flex-wrap gap-3 justify-between items-center">
-            <div className="flex gap-3 flex-wrap">
-              <Input type="date" className="w-[160px]" />
-
-              <Select>
-                <SelectTrigger className="w-[160px]">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="published">Published</SelectItem>
-                  <SelectItem value="draft">Draft</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select>
-                <SelectTrigger className="w-[160px]">
-                  <SelectValue placeholder="Page" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="home">Home</SelectItem>
-                  <SelectItem value="about">About Us</SelectItem>
-                  <SelectItem value="journey">Our Journey</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select>
-                <SelectTrigger className="w-[160px]">
-                  <SelectValue placeholder="Section" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="hero">Hero</SelectItem>
-                  <SelectItem value="overview">Overview</SelectItem>
-                  <SelectItem value="mission">Mission</SelectItem>
-                </SelectContent>
-              </Select>
+          {/* Action Bar */}
+          <div className="flex flex-wrap gap-3 justify-between items-center pb-2">
+            <div className="flex gap-3 items-center">
+               <h3 className="text-sm font-medium">All Website Modules</h3>
             </div>
 
             <Link href="/eCommerce/add-product">
-              <Button size="sm">
-                <Plus className="mr-1 h-5 w-5" />
-                Add Content
+              <Button size="sm" className="bg-primary hover:bg-primary/90">
+                <Plus className="mr-1 h-4 w-4" />
+                Create New Section
               </Button>
             </Link>
           </div>
 
           {/* TABLE */}
-          <div className="relative w-full overflow-x-auto">
-            <Table className="min-w-[900px]">
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-10">
-                    <Checkbox
-                    checked={
-                      paginatedProducts.length > 0 &&
-                      selected.length === paginatedProducts.length
-                    }
-                    onCheckedChange={(val) => toggleAll(!!val)}
-                  />
-                  </TableHead>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Page</TableHead>
-                  <TableHead>Section</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Last Updated</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-
-              <TableBody>
-                {paginatedProducts.map((product) => (
-                  <TableRow key={product.id}>
-                    <TableCell>
+          <div className="relative w-full overflow-x-auto rounded-md border">
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center p-20 gap-4">
+                <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                <p className="text-muted-foreground animate-pulse">Fetching latest website content...</p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader className="bg-muted/50">
+                  <TableRow>
+                    <TableHead className="w-10">
                       <Checkbox
-                      checked={selected.includes(product.id)}
-                      onCheckedChange={() => toggleOne(product.id)}
-                    />
-                    </TableCell>
-
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={product.image}
-                          alt={product.name}
-                          className="h-10 w-10 rounded-full border object-cover p-1 bg-muted/50"
-                        />
-                        <span className="font-medium">{product.name}</span>
-                      </div>
-                    </TableCell>
-
-                    <TableCell>{product.category}</TableCell>
-                    <TableCell>Hero</TableCell>
-
-                    <TableCell>
-                      <Badge className={statusVariant(product.status)} variant="outline">
-                        {product.status}
-                      </Badge>
-                    </TableCell>
-
-                    <TableCell>2024-05-04</TableCell>
-
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8 rounded-full border-gray-300 dark:border-gray-700"
-                          >
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => {
-                              console.log("View product", product.id)
-                            }}
-                          >
-                            <UserIcon />
-                            View
-                          </DropdownMenuItem>
-
-                          <DropdownMenuItem
-                            onClick={() => {
-                              console.log("Edit product", product.id)
-                            }}
-                          >
-                            <SettingsIcon />
-                            Edit
-                          </DropdownMenuItem>
-
-                          <DropdownMenuSeparator />
-
-                          <DropdownMenuItem
-                            className="text-red-600 focus:text-red-600"
-                            onClick={() => {
-                              setOrdersData(prev =>
-                                prev.filter(p => p.id !== product.id)
-                              )
-                              setSelected(prev =>
-                                prev.filter(id => id !== product.id)
-                              )
-                            }}
-                          >
-                            <LogOutIcon />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
+                        checked={paginatedContent.length > 0 && selected.length === paginatedContent.length}
+                        onCheckedChange={(val) => toggleAll(!!val)}
+                      />
+                    </TableHead>
+                    <TableHead>Page / Subpage</TableHead>
+                    <TableHead>Section Name</TableHead>
+                    <TableHead>Content Type</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Last Modified</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+
+                <TableBody>
+                  {paginatedContent.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="h-24 text-center">
+                        No content found matching your search.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    paginatedContent.map((item) => (
+                      <TableRow key={item._id} className="hover:bg-muted/30 transition-colors">
+                        <TableCell>
+                          <Checkbox
+                            checked={selected.includes(item._id)}
+                            onCheckedChange={() => toggleOne(item._id)}
+                          />
+                        </TableCell>
+
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <span className="font-bold text-foreground capitalize">{item.page}</span>
+                            {item.subpage && (
+                              <span className="text-xs text-muted-foreground bg-muted w-fit px-1.5 py-0.5 rounded mt-1 border">
+                                {item.subpage}
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Layers className="h-4 w-4 text-primary/60" />
+                            <span className="font-medium">{item.section}</span>
+                          </div>
+                        </TableCell>
+
+                        <TableCell>
+                          <Badge variant="secondary" className="capitalize font-normal">
+                             {item.type}
+                          </Badge>
+                        </TableCell>
+
+                        <TableCell>
+                          <Badge className={statusVariant(item.status)} variant="outline">
+                            {item.status}
+                          </Badge>
+                        </TableCell>
+
+                        <TableCell className="text-muted-foreground text-xs">
+                          {item.updated_at ? new Date(item.updated_at).toLocaleString() : "Initial"}
+                        </TableCell>
+
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                             <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 hover:text-primary"
+                              title="Edit Content"
+                              onClick={() => {
+                                router.push(`/eCommerce/add-product?page=${item.page}&section=${item.section}${item.subpage ? `&subpage=${item.subpage}` : ""}`)
+                              }}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 hover:text-orange-500"
+                              title="Undo last change"
+                              disabled={!item.versions || item.versions.length === 0}
+                              onClick={() => handleUndo(item._id)}
+                            >
+                              <RotateCcw className="h-4 w-4" />
+                            </Button>
+
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => router.push(`/eCommerce/add-product?page=${item.page}&section=${item.section}${item.subpage ? `&subpage=${item.subpage}` : ""}`)}>
+                                  <History className="mr-2 h-4 w-4" /> View History
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem className="text-destructive focus:text-destructive">
+                                  <Trash2 className="mr-2 h-4 w-4" /> Delete Permanently
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            )}
           </div>
-          {/* Pagination controls */}
-          <div className="flex items-center justify-between px-2 py-2">
-            <div className="text-sm text-muted-foreground">
-              {filteredOrders.length === 0
-                ? "Showing 0 of 0"
-                : `Showing ${ (page - 1) * PAGE_SIZE + 1 } - ${ Math.min(page * PAGE_SIZE, filteredOrders.length) } of ${ filteredOrders.length }`}
+
+          {/* Pagination */}
+          {!isLoading && contentList.length > 0 && (
+            <div className="flex items-center justify-between px-2 py-2">
+              <div className="text-sm text-muted-foreground">
+                Showing { (page - 1) * PAGE_SIZE + 1 } - { Math.min(page * PAGE_SIZE, filteredContent.length) } of { filteredContent.length }
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                >
+                  Previous
+                </Button>
+                <div className="flex items-center gap-1">
+                   {[...Array(totalPages)].map((_, i) => (
+                     <Button
+                        key={i}
+                        variant={page === i + 1 ? "default" : "ghost"}
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        onClick={() => setPage(i + 1)}
+                     >
+                       {i + 1}
+                     </Button>
+                   ))}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                >
+                  Next
+                </Button>
+              </div>
             </div>
-
-            <div className="flex items-center gap-2">
-              <Button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-              >
-                Prev
-              </Button>
-
-              <span className="text-sm">Page {page} of {totalPages}</span>
-
-              <Button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-              >
-                Next
-              </Button>
-            </div>
-          </div>
+          )}
         </CardContent>
       </Card>
     </div>
   )
 }
 
-/* KPI CARD */
 function StatCard({
   title,
   value,
-  trend,
   icon,
-  positive,
 }: {
   title: string
   value: string
-  trend: string
   icon: React.ReactNode
-  positive?: boolean
 }) {
   return (
-    <Card>
+    <Card className="hover:shadow-md transition-shadow border-primary/10">
       <CardContent className="flex justify-between items-center p-6">
-        <div>
-          <p className="text-md text-muted-foreground">{title}</p>
-          <h3 className="text-2xl font-medium">{value}</h3>
-          <div className="flex items-center gap-1 mt-1 text-sm font-medium mt-2">
-            {positive ? (
-              <ArrowUpRight className="h-4 w-5 text-emerald-600" />
-            ) : (
-              <ArrowDownRight className="h-4 w-5 text-rose-600" />
-            )}
-            <span>{trend}</span>
-          </div>
+        <div className="space-y-1">
+          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{title}</p>
+          <h3 className="text-3xl font-bold tracking-tight">{value}</h3>
         </div>
-        <div className="rounded-xl bg-muted p-3">{icon}</div>
+        <div className="rounded-2xl bg-primary/10 p-4 border border-primary/10 shadow-inner">
+          {icon}
+        </div>
       </CardContent>
     </Card>
   )
