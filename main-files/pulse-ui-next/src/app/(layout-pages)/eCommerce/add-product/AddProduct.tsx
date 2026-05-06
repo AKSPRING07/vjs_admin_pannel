@@ -174,28 +174,41 @@ function AddProductContent() {
   const handleCardAction = async (action: "create_card" | "update_card" | "delete_card", cardId?: string, data?: any) => {
     setIsSaving(true)
     try {
-      const payload: any = {
-        mainPage: selectedPage === 'business' ? 'Business Verticals' : selectedPage,
-        subSection: selectedSubpage,
-        category: selectedSectionName,
-        title: data.title,
-        description: data.description,
-        image: data.image_url || data.image,
-        order: data.order || 0
+      // --- DELETE ---
+      if (action === "delete_card") {
+        if (!cardId) throw new Error("No card ID provided for delete")
+        await api.delete(`/content/${cardId}`)
+        toast.success("Card deleted successfully")
+        fetchCurrentContent()
+        return
       }
 
-      if (cardId) {
-        await api.put(`/api/content/${cardId}`, payload)
-      } else {
-        await api.post("/api/content", payload)
+      // --- CREATE or UPDATE ---
+      const payload: any = {
+        mainPage:   selectedPage === "business" ? "Business Verticals" : selectedPage,
+        subSection: selectedSubpage,
+        category:   selectedSectionName,
+        title:       data?.title       || "",
+        description: data?.description || "",
+        image:       data?.image_url   || data?.image || "",
+        order:       data?.order       || 0
       }
-      toast.success("Database Updated Successfully")
+
+      if (action === "update_card" && cardId) {
+        await api.put(`/content/${cardId}`, payload)
+        toast.success("Card updated successfully")
+      } else {
+        await api.post("/content", payload)
+        toast.success("Card created successfully")
+        setSelectedAction("update") // switch to update view so the new card is visible
+      }
+
       setEditingCardId(null)
       setCardFormData({})
-      if (action === 'create_card') setSelectedAction('update') // Switch to update to see the new card
       fetchCurrentContent()
     } catch (error: any) {
-      toast.error("Card action failed")
+      console.error("Card action error:", error)
+      toast.error(error?.message || "Card action failed")
     } finally {
       setIsSaving(false)
     }
